@@ -1,0 +1,99 @@
+{% extends 'users/base.html' %}
+{% load mathfilters %}
+{% load static %}
+{% block body %}
+<h2 class="mt-3 p-2">Logged-in as {{ request.user.username }} !</h2>
+<div class="flex justify-center mt-5 p-10">
+    <h2 class="text-3xl font-normal mb-2 text-gray-500">My Posts</h2>
+</div>
+
+<div class="grid grid-cols-1 mx-60 p-10">
+    {% for post in posts %}
+    <!-- card starts here -->
+    <a class="mb-4">
+
+        <div class="rounded overflow-hidden w-[450px] h-[450px] bg-white shadow-lg">
+            <div class="user-container flex mx-5 my-5">
+                <img class="w-11 h-11 rounded-full" src="{{ post.user.profile.photo.url }}" alt="">
+                <div class="mx-2 my-2 font-bold"><span class="text-indigo-500">{{ post.user }}</span></div>
+            </div>
+            <img class="shadow-sm" src="{{ post.image.url }}" alt="Blog Post Image">
+        </div>
+        <div class="px-3 py-2 ">
+            <div class="icon-container flex gap-4">
+                {% if logged_user in post.liked_by.all %}
+                <a id="{{ post.id }}" class="btn-like">
+                    <img class="w-7 h-7" src="{% static 'users/images/red_like.png' %}" alt="">
+                </a>
+                {% else %}
+                <a id="{{ post.id }}" class="btn-like" href="#">
+                    <img class="w-7 h-7" src="{% static 'users/images/white_like.png' %}" alt="">
+                </a>
+                {% endif %}
+                <a href=""></a><img class="w-7 h-7" src="{% static 'users/images/comment_icon.png' %}" alt="">
+                <img class="w-7 h-7" src="{% static 'users/images/share_icon.png' %}" alt="">
+            </div>
+        </div>
+
+        <div class="text-gray-600">
+            {% if post.liked_by.count < 1 %}
+            {% elif post.liked_by.count == 1 %}
+                {{ post.liked_by.first }} likes this
+            {% else %}
+                {{ post.liked_by.first }} + {{ post.liked_by.count | sub:1}} others likes this
+            {% endif %}
+        </div>
+        <div class="px-3 pt-4">
+            <div class="font-bold text-xl mb-2">{{ post.title }}</div>
+            <p class="text-gray-700 text-base mb-5">{{ post.caption }}</p>
+        </div>
+        <!-- comments -->
+        <div class="px-5 py-5">
+            {% for comment in post.comments.all %}
+                <b>{{ comment.user }}</b>: {{ comment.body }}
+                <br>
+            {% endfor %}
+        </div>
+        <!-- comment area -->
+        <div class="px-5 py-5">
+            <form method="post"  class="bg-white rounded">
+                {% csrf_token %}
+                <div class="flex">
+                    <div class="border rounded mr-5 text-gray-700">
+                        {{ comment_form.body }}
+                    </div>
+                    <button class="bg-green-500 text-white px-5 py-2" type="submit">Comment</button>
+                    <!-- create a hidden input field that auto fills the post_id -->
+                    <input type="hidden" name="post_id" value="{{ post.id }}">
+                </div>                
+            </form>
+        </div>
+    </a>
+    <!-- card ends here -->
+    {% endfor %}
+</div>
+<script type="text/javascript">
+    // console.log('Working')
+
+    window.CSRF_TOKEN = "{{ csrf_token }}"
+    $(document).on('click','.btn-like',function(){
+        // console.log(this.id)
+        var post_id = this.id
+
+        // ajax code to submit a post request to like url along with post_id
+        $.ajax({
+            method:"POST",
+            url:'/posts/like',
+            data:{post_id:post_id,csrfmiddlewaretoken:window.CSRF_TOKEN},
+        })
+        // console.log('post request sent')
+        // redirect to the same page after botton click
+        window.location.href="{% url 'feed' %}"
+
+    })
+
+</script>
+
+
+{% endblock %}
+
